@@ -41,10 +41,62 @@ function render(ctx, leftPaddlePosition, rightPaddlePosition) {
 // Position as a percentage: 0 is all the way up, 1 is all the way down.
 let leftPaddlePosition  = 0.5;
 let rightPaddlePosition = 0.5;
+// The time at which this game state is given.
+let stateTime = performance.now();
+
+let inputs = {
+  "leftPaddleUp":   false,
+  "leftPaddleDown": false,
+};
+
+function clamp(min, max, x) {
+  if (x < min) return min;
+  if (max < x) return max;
+  return x;
+}
+
+function update(eventTime) {
+  let deltaTime = eventTime - stateTime;
+  stateTime = eventTime;
+
+  let wForce = (inputs.leftPaddleUp)   ? -0.001 : 0.0;
+  let sForce = (inputs.leftPaddleDown) ? +0.001 : 0.0;
+  let leftPaddleVelocity  = wForce + sForce;
+  let rightPaddleVelocity = 0.0;
+
+  leftPaddlePosition  = clamp(0.0, 1.0, leftPaddlePosition  + leftPaddleVelocity  * deltaTime);
+  rightPaddlePosition = clamp(0.0, 1.0, rightPaddlePosition + rightPaddleVelocity * deltaTime);
+}
 
 const ctx = document.getElementById("game-canvas").getContext("2d");
 
 window.requestAnimationFrame(function gameLoop() {
-  render(ctx, leftPaddlePosition, rightPaddlePosition);
   window.requestAnimationFrame(gameLoop);
+
+  update(performance.now());
+
+  render(ctx, leftPaddlePosition, rightPaddlePosition);
+});
+
+ctx.canvas.addEventListener("keydown", (ev) => {
+  ev.preventDefault();
+  ev.stopPropagation();
+
+  update(performance.now());
+
+  switch (ev.code) {
+    case "KeyW": inputs.leftPaddleUp   = true; break;
+    case "KeyS": inputs.leftPaddleDown = true; break;
+  }
+});
+ctx.canvas.addEventListener("keyup", (ev) => {
+  ev.preventDefault();
+  ev.stopPropagation();
+
+  update(performance.now());
+
+  switch (ev.code) {
+    case "KeyW": inputs.leftPaddleUp   = false; break;
+    case "KeyS": inputs.leftPaddleDown = false; break;
+  }
 });
